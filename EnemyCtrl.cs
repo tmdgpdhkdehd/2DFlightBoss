@@ -25,13 +25,22 @@ public class EnemyCtrl : MonoBehaviour
     public int curPatternCount;
     public int[] maxPatternCount;
 
-    // Start is called before the first frame update
+    public AudioClip audioE_Attack;
+    public AudioClip audioItem;
+    AudioSource audioSource;
+
+    void Awake()
+    {
+        this.audioSource = this.gameObject.AddComponent<AudioSource>();
+        this.audioSource.loop = false;
+    }
+
     void Start()
     {
+        player = GameObject.Find("Player");
         spriteRender = GetComponent<SpriteRenderer>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         curShootingDelay += Time.deltaTime;
@@ -39,12 +48,6 @@ public class EnemyCtrl : MonoBehaviour
             return;
 
         curShootingDelay = 0;
-
-/*        GameObject bullet01 = Instantiate(bulletA, transform.position, transform.rotation);
-        Rigidbody2D rigid01 = bullet01.GetComponent<Rigidbody2D>();
-
-        Vector3 dirVec = player.transform.position - this.transform.position;
-        rigid01.AddForce(dirVec.normalized * 2.0f, ForceMode2D.Impulse);*/
 
         Think();
     }
@@ -58,36 +61,34 @@ public class EnemyCtrl : MonoBehaviour
         {
             bullet bullet = collision.gameObject.GetComponent<bullet>();
 
-            //OnHit(bullet.damage); // 자신의 hp 깎기 
             Debug.Log(health);
             health -= bullet.damage;
-            manager.GetComponent<gameMgr>().incScore(10);
 
-            if (health == 7000 || health == 3000)
+
+            spriteRender.color = new Color(0.46f, 0.87f, 0.95f, 1);
+            Invoke("restoreColor", 0.1f);
+
+            Destroy(collision.gameObject); // 총알 소멸 
+
+            gameMgr.instance.incScore(10);
+
+            if (health == 16000 || health == 13000 || health == 10000 || health == 7000 || health == 4000)
             {
-                GameObject item01 
-                    = Instantiate(itemToDrop, 
-                                  transform.position + Vector3.down * 0.2f, 
-                                  transform.rotation); // 아이템 드롭 
+                GameObject item01
+                    = Instantiate(itemToDrop,
+                                  transform.position + Vector3.down * 0.2f,
+                                  transform.rotation); // 아이템 드롭
+
+                this.audioSource.volume = 1;
+                this.audioSource.PlayOneShot(audioItem);
 
                 // 아래로 느리게 이동
-                item01.GetComponent<Rigidbody2D>().AddForce(new Vector2(0, -1) * 30);  
+                item01.GetComponent<Rigidbody2D>().AddForce(new Vector2(0, -1) * 30);
             }
             else if (health <= 0)
             {
                 Destroy(gameObject);
             }
-
-            if (health == 6000 || health == 4800 || health == 3600 || health == 2400 || health == 1200 || health == 800)
-            {
-                Debug.Log("어라운드 쏜다");
-                FireAround();
-            }
-
-            spriteRender.color = new Color(0.46f, 0.87f, 0.95f, 1);
-            Invoke("restoreColor", 0.1f);
-
-            Destroy(collision.gameObject);// 총알 소멸 
         }
     }
 
@@ -104,34 +105,20 @@ public class EnemyCtrl : MonoBehaviour
         switch (patternIndex)
         {
             case 0:
-                Debug.Log("0");
-                Invoke("FireAround", 2);
-                Invoke("FireFoward", 4);
-                Invoke("FireShot", 6);
-                Invoke("FireArc", 8);
+                FireFoward();
                 break;
             case 1:
-                Debug.Log("1");
-                Invoke("FireShot", 2);
-                Invoke("FireFoward", 4);
-                Invoke("FireArc", 6);
-                Invoke("FireAround", 8);
+                FireShot();
                 break;
             case 2:
-                Debug.Log("2");
-                Invoke("FireArc", 2);
-                Invoke("FireAround", 4);
-                Invoke("FireShot", 6);
-                Invoke("FireFoward", 8);
+                FireArc();
                 break;
             case 3:
-                Debug.Log("3");
-                Invoke("FireFoward", 2);
-                Invoke("FireAround", 4);
-                Invoke("FireArc", 6);
-                Invoke("FireShot", 8);
+                FireAround();
                 break;
         }
+        this.audioSource.volume = 0.5f;
+        this.audioSource.PlayOneShot(audioE_Attack);
     }
 
     void FireFoward()
@@ -164,15 +151,10 @@ public class EnemyCtrl : MonoBehaviour
         rigid05.AddForce(Vector2.down * 1.3f, ForceMode2D.Impulse);
         rigid07.AddForce(Vector2.down * 1.3f, ForceMode2D.Impulse);
 
-        //curPatternCount++;
+        curPatternCount++;
 
-/*        if (curPatternCount >= maxPatternCount[patternIndex])
-            Invoke("Think", 4);*/
-/*
-        if (curPatternCount < maxPatternCount[patternIndex])
-            Invoke("FireFoward", 2);
-        else
-            Invoke("Think", 5);*/
+        if (curPatternCount >= maxPatternCount[patternIndex])
+            Invoke("Think", 4);
     }
 
     void FireShot()
@@ -189,15 +171,10 @@ public class EnemyCtrl : MonoBehaviour
             rigid01.AddForce(dirVec.normalized * 1.3f, ForceMode2D.Impulse);
         }
 
-        //curPatternCount++;
+        curPatternCount++;
 
-/*        if (curPatternCount >= maxPatternCount[patternIndex])
-            Invoke("Think", 4);*/
-
-        /*        if (curPatternCount < maxPatternCount[patternIndex])
-                    Invoke("FireShot", 3.5f);
-                else
-                    Invoke("Think", 5);*/
+        if (curPatternCount >= maxPatternCount[patternIndex])
+            Invoke("Think", 4);
     }
 
     void FireArc()
@@ -214,9 +191,11 @@ public class EnemyCtrl : MonoBehaviour
 
         if (curPatternCount < maxPatternCount[patternIndex])
             Invoke("FireArc", 0.15f);
+        else
+            Invoke("Think", 4);
     }
 
-    void FireAround ()
+    void FireAround()
     {
         int roundNumA = 20;
         for (int index = 0; index < roundNumA; index++)
@@ -234,14 +213,9 @@ public class EnemyCtrl : MonoBehaviour
             bullet01.transform.Rotate(rotVec);
         }
 
-        //curPatternCount++;
+        curPatternCount++;
 
-/*        if (curPatternCount >= maxPatternCount[patternIndex])
-            Invoke("Think", 4);*/
-
-        /*        if (curPatternCount < maxPatternCount[patternIndex])
-                    Invoke("FireAround", 0.7f);
-                else
-                    Invoke("Think", 5);*/
+        if (curPatternCount >= maxPatternCount[patternIndex])
+            Invoke("Think", 4);
     }
 }
