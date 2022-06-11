@@ -1,1 +1,1 @@
-# 2DFlightBoss
+# SuperGalaxy
