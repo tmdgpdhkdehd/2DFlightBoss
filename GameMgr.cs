@@ -1,79 +1,74 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class gameMgr : MonoBehaviour
 {
+    public static gameMgr instance;
 
     public GameObject player;
 
     public GameObject[] enemies;
     public Transform[] spawnPlaces;
 
+    Rigidbody2D rigid ;
+
     public float maxSpawnDelay = 1;
     public float curSpawnDelay = 0;
 
-    float curScore = 0;
-    Transform scoreTxt;
+    public float curScore = 0;
+
+    int randEnemy ;
+    int randomPoint;
+
+    public Text scoreText;
+    public Canvas Score;
+
+    bool end = false;
 
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
-        scoreTxt = GameObject.Find("Canvas").transform.Find("score");
+        instance = this;
 
         curSpawnDelay += Time.deltaTime;
         curSpawnDelay = 0;
 
-        int randEnemy = Random.Range(0, 1);
-        int randomPoint = 1;
-
+        randomPoint = 1;
+        randEnemy = Random.Range(0, 1);
+    }
+    void Start()
+    {
         GameObject enemy = Instantiate(enemies[randEnemy],
             spawnPlaces[randomPoint].position,
             spawnPlaces[randomPoint].rotation);
 
-        Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-        EnemyCtrl enemyScript = enemy.GetComponent<EnemyCtrl>();
+        rigid = enemy.GetComponent<Rigidbody2D>();
 
-        enemyScript.player = player;
-        enemyScript.manager = this.gameObject;
+        Score.gameObject.SetActive(false);
+
+        Time.timeScale = 1;
+
+        Invoke("endGame", 60.0f);
     }
 
-    // Update is called once per frame
     void Update()
     {
-/*        curSpawnDelay += Time.deltaTime;
-        if (curSpawnDelay > maxSpawnDelay)
+        if (end)
         {
-            curSpawnDelay = 0;
-
-            int randEnemy = Random.Range(0, 1);
-            int randomPoint = Random.Range(0, 5);
-
-            GameObject enemy = Instantiate(enemies[randEnemy],
-                spawnPlaces[randomPoint].position,
-                spawnPlaces[randomPoint].rotation);
-
-            Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-            EnemyCtrl enemyScript = enemy.GetComponent<EnemyCtrl>();
-
-            enemyScript.player = player;
-            enemyScript.manager = this.gameObject;
-
-            if(randomPoint==3) // left
-                rigid.velocity = new Vector2(enemyScript.speed * 0.5f, enemyScript.speed* - 1);
-            else if(randomPoint==4)// right
-                rigid.velocity = new Vector2(enemyScript.speed * -0.5f, enemyScript.speed * -1);
-            else 
-                rigid.velocity = new Vector2(0, enemyScript.speed * (-1));
-        }*/
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                SceneChange.instance.IntroScene();
+            }
+        }
     }
 
     public void incScore(float amount)
     {
         curScore += amount;
-        scoreTxt.GetComponent<Text>().text = "score: " + curScore.ToString();
+        scoreText.text = curScore.ToString();
     }
 
     public void restorePlayer()
@@ -86,5 +81,12 @@ public class gameMgr : MonoBehaviour
         player.transform.position = Vector3.down * 0.6f;
         player.SetActive(true);
         player.transform.GetComponent<playerCtrl>().Initialize(); // 초기화 
+    }
+
+    public void endGame()
+    {
+        Score.gameObject.SetActive(true);
+        end = true;
+        Time.timeScale = 0;
     }
 }
